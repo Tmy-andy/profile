@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { doc, setDoc, getDoc, onSnapshot} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from "./firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Mail, Phone, Globe, Calendar, UploadCloud, Check, Eye, EyeOff, Lock, Save } from "react-feather";
@@ -59,13 +60,31 @@ export default function ProfileSettingsPage() {
     marketing: true
   });
 
-  const handleAvatarUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Xử lý upload avatar, ví dụ upload lên Firebase Storage
-    }
-  };
+  const storage = getStorage();
 
+  async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      // Tạo đường dẫn lưu ảnh trong Storage
+      const storageRef = ref(storage, `avatars/${userId}/${file.name}`);
+
+      // Upload ảnh
+      await uploadBytes(storageRef, file);
+
+      // Lấy URL công khai
+      const url = await getDownloadURL(storageRef);
+
+      // Gán vào state avatarUrl
+      setAvatarUrl(url);
+
+      showToast("Avatar uploaded successfully", "success");
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
+      showToast("Failed to upload avatar", "error");
+    }
+  }
 
   // Security states
   const [twoFA, setTwoFA] = useState(true);
