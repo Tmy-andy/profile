@@ -133,20 +133,28 @@ export default function ProfileSettingsPage() {
 
   async function saveSkills() {
     try {
-      await setDoc(doc(db, "users", userId), { skills }, { merge: true });
+      await setDoc(
+        doc(db, "users", userId),
+        { skills },
+        { merge: true }
+      );
       showToast("Skills updated successfully", "success");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error saving skills:", error);
       showToast("Failed to save skills", "error");
     }
   }
 
   async function saveProjects() {
     try {
-      await setDoc(doc(db, "users", userId), { projects }, { merge: true });
+      await setDoc(
+        doc(db, "users", userId),
+        { projects },
+        { merge: true }
+      );
       showToast("Projects updated successfully", "success");
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error saving projects:", error);
       showToast("Failed to save projects", "error");
     }
   }
