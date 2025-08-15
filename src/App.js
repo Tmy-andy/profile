@@ -50,6 +50,7 @@ export default function ProfileSettingsPage() {
   const [notifMarketing, setNotifMarketing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [website, setWebsite] = useState('');
 
   // Notifications states
   const [notifications, setNotifications] = useState({
@@ -811,7 +812,10 @@ export default function ProfileSettingsPage() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => showToast("Skills saved successfully", "success")}
+                    onClick={async () => {
+                      await saveSkills();
+                      showToast("Skills saved successfully", "success");
+                    }}
                     className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-blue-500/25"
                   >
                     <Save className="h-5 w-5"/>
