@@ -1,177 +1,103 @@
-import React, { useState, useEffect } from "react";
-import {
-  FaUser,
-  FaCode,
-  FaProjectDiagram,
-  FaBell,
-  FaLock,
-  FaCheck
-} from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
-import { doc, setDoc, getDoc, onSnapshot} from "firebase/firestore";
-import { db } from "./firebaseConfig";
-import { getAuth } from "firebase/auth";
-import { Mail, Phone, Globe, Calendar, UploadCloud, Check, Eye, EyeOff, Lock, Save } from "react-feather";
-import { LogOut, User, Star, Sparkles, Bell, Shield, Link2, Trash2, Camera } from 'lucide-react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { 
+  User, Lock, Bell, Shield, Link2, Trash2, Save,
+  Mail, Phone, Globe, Calendar, Camera, UploadCloud, LogOut, Check,
+  Eye, EyeOff, Sparkles, Star
+} from "lucide-react";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "./firebaseConfig"; // đường dẫn tới file config
+
+import { useEffect } from "react";
 
 export default function ProfileSettingsPage() {
-  // ==== STATES ====
-  const [activeTab, setActiveTab] = useState("profile");
-  const [saved, setSaved] = useState(false);
-  const [toasts, setToasts] = useState([]);
-
-  // Profile states
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [fullName, setFullName] = useState("Yami Yuuki");
   const [major, setMajor] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("yami@example.com");
   const [phone, setPhone] = useState("");
   const [bio, setBio] = useState("");
 
-  // Skills states
-  const [skills, setSkills] = useState([]);
-  const [newSkill, setNewSkill] = useState("");
-
-  // Projects states
-  const [projects, setProjects] = useState([]);
-  const [newProject, setNewProject] = useState("");
-  const [projectDesc, setProjectDesc] = useState("");
-  const [projectUploads, setProjectUploads] = useState([]);
-
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [oldPwd, setOldPwd] = useState("");
-  const [skillsList, setSkillsList] = useState([]);
-  const [skillInput, setSkillInput] = useState("");
-  const [projectsList, setProjectsList] = useState([]);
-  const [openIndex, setOpenIndex] = useState(null);
-  const [notifEmail, setNotifEmail] = useState(false);
+  const [notifEmail, setNotifEmail] = useState(true);
   const [notifPush, setNotifPush] = useState(false);
   const [notifMarketing, setNotifMarketing] = useState(false);
+
+  const [twoFA, setTwoFA] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Notifications states
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    marketing: true
-  });
+  const [oldPwd, setOldPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
 
-  const handleAvatarUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Xử lý upload avatar, ví dụ upload lên Firebase Storage
-    }
-  };
+  const [activeTab, setActiveTab] = useState("profile");
+  const [saved, setSaved] = useState(false);
 
+  const [skills, setSkills] = useState("");
+  const [skillsList, setSkillsList] = useState([]);
+  const [skillInput, setSkillInput] = useState("");
 
-  // Security states
-  const [twoFA, setTwoFA] = useState(true);
-  
-  const auth = getAuth();
-  const userId = "test-user"; // sau này bạn thay bằng uid của Firebase Auth
-  // const userId = auth.currentUser?.uid;
+  const [projectsList, setProjectsList] = useState([
+    { name: "", desc: "", upload: { type: "file", value: null } }
+  ]);
+  const [openIndex, setOpenIndex] = useState(null);
 
-  // ==== TOAST ====
-  const showToast = (message, type) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 3000);
-  };
-
-  // ==== LOAD DATA ====
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const docRef = doc(db, "users", userId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          console.log("Data from Firestore:", data); // Debug dữ liệu Firestore
-
-          setSkills(data.skills || []);
-          setProjects(data.projects || []);
-          setNotifications(data.notifications || false);
-          setTwoFA(data.twoFA || false);
-          setWebsite(data.website || "");
+    async function fetchProfile() {
+      const userId = "test-user";
+      const docRef = doc(db, "users", userId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data().profile;
+        if (data) {
+          setAvatarUrl(data.avatarUrl || "");
+          setFullName(data.fullName || "");
+          setMajor(data.major || "");
+          setEmail(data.email || "");
+          setPhone(data.phone || "");
           setBio(data.bio || "");
-        } else {
-          console.log("No such document!");
         }
-      } catch (error) {
-        console.error("Error fetching data: ", error);
       }
-    };
+    }
+    fetchProfile();
+  }, []);
 
-    fetchData();
-  }, [userId]);
+  function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setAvatarUrl(url);
+    showToast("Avatar preview updated", "success");
+  }
 
-
-  // ==== SAVE FUNCTIONS ====
   async function saveProfile() {
     try {
+      const userId = "test-user"; // sau này có thể thay bằng uid từ Firebase Auth
       await setDoc(
         doc(db, "users", userId),
         {
-          profile: { avatarUrl, fullName, major, email, phone, bio }
+          profile: {
+            avatarUrl,
+            fullName,
+            major,
+            email,
+            phone,
+            bio
+          }
         },
-        { merge: true }
+        { merge: true } // giữ lại các field khác
       );
       setSaved(true);
       showToast("Profile updated successfully", "success");
       setTimeout(() => setSaved(false), 2000);
     } catch (error) {
-      console.error("Error saving profile:", error);
+      console.error("Error saving profile: ", error);
       showToast("Failed to save profile", "error");
     }
   }
 
-  async function saveSkills() {
-    try {
-      await setDoc(doc(db, "users", userId), { skills }, { merge: true });
-      showToast("Skills updated successfully", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to save skills", "error");
-    }
-  }
-
-  async function saveProjects() {
-    try {
-      await setDoc(doc(db, "users", userId), { projects }, { merge: true });
-      showToast("Projects updated successfully", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to save projects", "error");
-    }
-  }
-
-  async function saveNotifications() {
-    try {
-      await setDoc(doc(db, "users", userId), { notifications }, { merge: true });
-      showToast("Notifications updated successfully", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to save notifications", "error");
-    }
-  }
-
-  async function saveSecurity() {
-    try {
-      await setDoc(
-        doc(db, "users", userId),
-        { security: { twoFA } },
-        { merge: true }
-      );
-      showToast("Security settings updated successfully", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to save security settings", "error");
-    }
+  function saveNotifications() {
+    showToast("Notification preferences saved", "success");
   }
 
   function saveSecurity() {
@@ -183,6 +109,17 @@ export default function ProfileSettingsPage() {
     setOldPwd("");
     setNewPwd("");
     setConfirmPwd("");
+  }
+
+  function showToast(message, type) {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 px-3 py-3 rounded-xl shadow-lg transition-all duration-300 ${
+      type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
   }
 
   function addSkill(e) {
